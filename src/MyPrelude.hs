@@ -79,7 +79,9 @@ myFilter :: (a -> Bool) -> [a] -> [a]
 myFilter = undefined
 
 myHead :: [a] -> a
-myHead = undefined
+myHead = let alg Nil = undefined
+             alg (Cons a _) = a
+          in cata alg
 
 myLast :: [a] -> a
 myLast = undefined
@@ -90,14 +92,18 @@ myTail = undefined
 myInit :: [a] -> [a]
 myInit = undefined
 
-myNull :: Foldable t => t a -> Bool
-myNull = undefined
+myNull :: [a] -> Bool
+myNull = let alg Nil = True
+             alg (Cons _ _) = False
+          in cata alg
 
-myLength :: Foldable t => t a -> Int
-myLength = undefined
+myLength :: [a] -> Int
+myLength = let alg Nil = 0
+               alg (Cons _ n) = n + 1
+            in cata alg
 
-myIndex :: [a] -> Int -> a
-myIndex = undefined
+myIndex :: Int -> [a] -> a
+myIndex n = undefined
 
 myReverse :: [a] -> [a]
 myReverse = undefined
