@@ -1,3 +1,4 @@
+
 module MyPrelude where
 
 import Data.Functor.Foldable
@@ -106,22 +107,24 @@ myIndex :: Int -> [a] -> a
 myIndex n = undefined
 
 myReverse :: [a] -> [a]
-myReverse = undefined
+myReverse = let alg Nil = []
+                alg (Cons a b) = b ++ [a]
+             in cata alg
 
-myAnd :: Foldable t => t Bool -> Bool
-myAnd = undefined
+myAnd :: [Bool] -> Bool
+myAnd = let alg Nil = True
+            alg (Cons a b) = a && b
+         in cata alg
 
-myOr :: Foldable t => t Bool -> Bool
-myOr = undefined
+myAll :: (a -> Bool) -> [a] -> Bool
+myAll f = let alg Nil = True
+              alg (Cons a b) = f a && b
+           in cata alg
 
-myAny :: Foldable t => (a -> Bool) -> t a -> Bool
-myAny = undefined
-
-myAll :: Foldable t => (a -> Bool) -> t a -> Bool
-myAll = undefined
-
-myConcatMap :: Foldable t => (a -> [b]) -> t a -> [b]
-myConcatMap = undefined
+myConcatMap :: (a -> [b]) -> [a] -> [b]
+myConcatMap f = let alg Nil = []
+                    alg (Cons a bs) = f a ++ bs
+                 in cata alg
 
 myScanl :: (b -> a -> b) -> b -> [a] -> [b]
 myScanl = undefined
@@ -136,10 +139,12 @@ myScanr1 :: (a -> a -> a) -> [a] -> [a]
 myScanr1 = undefined
 
 myIterate :: (a -> a) -> a -> [a]
-myIterate = undefined
+myIterate f = let coalg a = Cons a (f a)
+               in ana coalg
 
 myRepeat :: a -> [a]
-myRepeat = undefined
+myRepeat = let coalg a = Cons a a
+            in ana coalg
 
 myReplicate :: Int -> a -> [a]
 myReplicate = undefined
