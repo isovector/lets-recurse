@@ -1,7 +1,17 @@
+{-# LANGUAGE DeriveFoldable    #-}
+{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module MyPrelude where
 
 import Data.Functor.Foldable
+import Data.Functor.Foldable.TH
+
+data Nat = Z | S Nat
+
+makeBaseFunctor ''Nat
 
 
 myEnumFrom :: a -> [a]
@@ -85,13 +95,17 @@ myHead = let alg Nil = undefined
           in cata alg
 
 myLast :: [a] -> a
-myLast = undefined
-
-myTail :: [a] -> [a]
-myTail = undefined
+myLast = let alg Nil = Right ()
+             alg (Cons a as) = as >> Left a
+          in either id undefined . cata alg
 
 myInit :: [a] -> [a]
-myInit = undefined
+myInit = let alg Nil = Nothing
+             alg (Cons a as) =
+               case as of
+                 Nothing -> Just []
+                 Just _ -> (a :) <$> as
+          in maybe undefined id . cata alg
 
 myNull :: [a] -> Bool
 myNull = let alg Nil = True
@@ -103,8 +117,10 @@ myLength = let alg Nil = 0
                alg (Cons _ n) = n + 1
             in cata alg
 
-myIndex :: Int -> [a] -> a
-myIndex n = undefined
+myIndex :: [a] -> Nat -> a
+myIndex as = let alg ZF = as
+                 alg (SF a) = tail a
+              in head . cata alg
 
 myReverse :: [a] -> [a]
 myReverse = let alg Nil = []
@@ -146,8 +162,10 @@ myRepeat :: a -> [a]
 myRepeat = let coalg a = Cons a a
             in ana coalg
 
-myReplicate :: Int -> a -> [a]
-myReplicate = undefined
+myReplicate :: a -> Nat -> [a]
+myReplicate a = let alg ZF = []
+                    alg (SF as) = a : as
+                 in cata alg
 
 myCycle :: [a] -> [a]
 myCycle = undefined
@@ -177,7 +195,12 @@ myNotElem :: (Foldable t, Eq a) => a -> t a -> Bool
 myNotElem = undefined
 
 myLookup :: Eq a => a -> [(a, b)] -> Maybe b
-myLookup = undefined
+myLookup a = let alg Nil = Nothing
+                 alg (Cons (a', b) x) =
+                   if a == a'
+                      then Just b
+                      else x
+              in cata alg
 
 myZip :: [a] -> [b] -> [(a, b)]
 myZip = undefined
