@@ -50,29 +50,35 @@ myFoldr1 = undefined
 myFoldl1 :: (a -> a -> a) -> t a -> a
 myFoldl1 = undefined
 
-myElem :: Eq a => a -> t a -> Bool
-myElem = undefined
+myElem :: Eq a => a -> [a] -> Bool
+myElem a =
+  let alg Nil = False
+      alg (Cons a' x) = x || a == a'
+   in cata alg
 
-myMaximum ::  Ord a => t a -> a
-myMaximum = undefined
+myMaximum ::  (Bounded a, Ord a) => [a] -> a
+myMaximum =
+  let alg Nil = minBound
+      alg (Cons a m) = max a m
+   in cata alg
 
-myMinimum ::  Ord a => t a -> a
-myMinimum = undefined
+mySum :: Num a => [a] -> a
+mySum =
+  let alg Nil = 0
+      alg (Cons n ns) = n + ns
+   in cata alg
 
-mySum :: Num a => t a -> a
-mySum = undefined
+myTraverse :: Applicative f => (a -> f b) -> [a] -> f [b]
+myTraverse f =
+  let alg Nil = pure []
+      alg (Cons a fbs) = (:) <$> f a <*> fbs
+   in cata alg
 
-myProduct :: Num a => t a -> a
-myProduct = undefined
-
-myTraverse :: Applicative f => (a -> f b) -> t a -> f (t b)
-myTraverse = undefined
-
-mySequenceA :: Applicative f => t (f a) -> f (t a)
-mySequenceA = undefined
-
-myMapM :: Monad m => (a -> m b) -> t a -> m (t b)
-myMapM = undefined
+mySequenceA :: Applicative f => [f a] -> f [a]
+mySequenceA =
+  let alg Nil = pure []
+      alg (Cons fa fas) = (:) <$> fa <*> fas
+   in cata alg
 
 mySequence :: Monad m => t (m a) -> m (t a)
 mySequence = undefined
@@ -81,10 +87,17 @@ myUntil :: (a -> Bool) -> (a -> a) -> a -> a
 myUntil = undefined
 
 myMap :: (a -> b) -> [a] -> [b]
-myMap = undefined
+myMap f =
+  let alg Nil = []
+      alg (Cons a bs) = f a : bs
+  in cata alg
 
 myConcat :: [a] -> [a] -> [a]
-myConcat = undefined
+myConcat =
+  let coalg ([], [])   = Nil
+      coalg ([], y:ys) = Cons y ([], ys)
+      coalg (x:xs, ys) = Cons x (xs, ys)
+   in curry $ ana coalg
 
 myFilter :: (a -> Bool) -> [a] -> [a]
 myFilter = undefined
@@ -181,16 +194,26 @@ myReplicate a =
    in cata alg
 
 myCycle :: [a] -> [a]
-myCycle = undefined
+myCycle =
+  let coalg (a : as) = Cons a (as ++ [a])
+   in ana coalg
 
-myTake :: Int -> [a] -> [a]
-myTake = undefined
+myTake :: [a] -> Nat -> [a]
+myTake = (fst .) . mySplitAt
 
-myDrop :: Int -> [a] -> [a]
-myDrop = undefined
+myDrop :: [a] -> Nat -> [a]
+myDrop as =
+  let alg ZF = as
+      alg (SF (_:a')) = a'
+      alg (SF [])     = []
+   in cata alg
 
-mySplitAt :: Int -> [a] -> ([a], [a])
-mySplitAt = undefined
+mySplitAt :: [a] -> Nat -> ([a], [a])
+mySplitAt as =
+  let alg ZF = ([], as)
+      alg (SF (x, (a : as))) = (x ++ [a], as)
+      alg (SF (x, []))       = (x, [])
+   in cata alg
 
 myTakeWhile :: (a -> Bool) -> [a] -> [a]
 myTakeWhile = undefined
@@ -198,14 +221,19 @@ myTakeWhile = undefined
 myDropWhile :: (a -> Bool) -> [a] -> [a]
 myDropWhile = undefined
 
-mySpan :: (a -> Bool) -> [a] -> ([a], [a])
-mySpan = undefined
-
 myBreak :: (a -> Bool) -> [a] -> ([a], [a])
-myBreak = undefined
+myBreak f =
+  let alg Nil = (False, ([], []))
+      alg (Cons b (True,  (as, bs))) = (True, (as, bs ++ [b]))
+      alg (Cons a (False, (as, bs))) =
+        if not (f a)
+           then (True, (as, bs ++ [a]))
+           else (False, (as ++ [a], bs))
+   -- TODO(sandy): disgusting af
+   in snd . cata alg . reverse
 
-myNotElem :: (Foldable t, Eq a) => a -> t a -> Bool
-myNotElem = undefined
+myNotElem :: (Eq a) => a -> [a] -> Bool
+myNotElem = (not .) . myElem
 
 myLookup :: Eq a => a -> [(a, b)] -> Maybe b
 myLookup a =
@@ -217,32 +245,33 @@ myLookup a =
    in cata alg
 
 myZip :: [a] -> [b] -> [(a, b)]
-myZip = undefined
-
-myZip3 :: [a] -> [b] -> [c] -> [(a, b, c)]
-myZip3 = undefined
+myZip = myZipWith (,)
 
 myZipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
-myZipWith = undefined
-
-myZipWith3 :: (a -> b -> c -> d) -> [a] -> [b] -> [c] -> [d]
-myZipWith3 = undefined
+myZipWith f =
+  let coalg (_, []) = Nil
+      coalg ([], _) = Nil
+      coalg (a:as, b:bs) = Cons (f a b) (as, bs)
+   in curry $ ana coalg
 
 myUnzip :: [(a, b)] -> ([a], [b])
-myUnzip = undefined
-
-myUnzip3 :: [(a, b, c)] -> ([a], [b], [c])
-myUnzip3 = undefined
+myUnzip =
+  let alg Nil = ([], [])
+      alg (Cons (a, b) (as, bs)) = (a:as, b:bs)
+   in cata alg
 
 myLines :: String -> [String]
-myLines = undefined
-
-myWords :: String -> [String]
-myWords = undefined
+myLines =
+  let coalg "" = Nil
+      coalg str =
+        case myBreak (/= '\n') str of
+          (as, []) -> Cons as ""
+          (as, bs) -> Cons as $ tail bs
+   in ana coalg
 
 myUnlines :: [String] -> String
-myUnlines = undefined
-
-myUnwords :: [String] -> String
-myUnwords = undefined
+myUnlines =
+  let alg Nil = ""
+      alg (Cons a as) = a ++ "\n" ++ as
+   in cata alg
 
