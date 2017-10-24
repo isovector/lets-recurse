@@ -14,32 +14,36 @@ data Nat = Z | S Nat
 makeBaseFunctor ''Nat
 
 
-myEnumFrom :: a -> [a]
-myEnumFrom = undefined
+myEnumFrom :: Enum a => a -> [a]
+myEnumFrom =
+  let coalg a = Cons a $ succ a
+   in ana coalg
 
-myEnumFromThen :: a -> a -> [a]
-myEnumFromThen = undefined
+myEnumFromTo :: Enum a => a -> a -> [a]
+myEnumFromTo from to =
+  let coalg a =
+        if fromEnum a > fromEnum to
+           then Nil
+           else Cons a $ succ a
+   in ana coalg from
 
-myEnumFromTo :: a -> a -> [a]
-myEnumFromTo = undefined
+myMconcat :: Monoid a => [a] -> a
+myMconcat =
+  let alg Nil = mempty
+      alg (Cons a ms) = mappend a ms
+   in cata alg
 
-myEnumFromThenTo :: a -> a -> a -> [a]
-myEnumFromThenTo = undefined
+myFoldMap :: Monoid m => (a -> m) -> [a] -> m
+myFoldMap f =
+  let alg Nil        = mempty
+      alg (Cons a b) = mappend (f a) b
+   in cata alg
 
-myMconcat :: [a] -> a
-myMconcat = undefined
-
-myMapM_ :: (Foldable t, Monad m) => (a -> m b) -> t a -> m ()
-myMapM_ = undefined
-
-mySequence_ :: (Foldable t, Monad m) => t (m a) -> m ()
-mySequence_ = undefined
-
-myFoldMap :: Monoid m => (a -> m) -> t a -> m
-myFoldMap = undefined
-
-myFoldr :: (a -> b -> b) -> b -> t a -> b
-myFoldr = undefined
+myFoldr :: (a -> b -> b) -> b -> [a] -> b
+myFoldr f b' =
+  let alg Nil = b'
+      alg (Cons a b) = f a b
+   in cata alg
 
 myFoldl :: (b -> a -> b) -> b -> t a -> b
 myFoldl = undefined
@@ -100,7 +104,13 @@ myConcat =
    in curry $ ana coalg
 
 myFilter :: (a -> Bool) -> [a] -> [a]
-myFilter = undefined
+myFilter f =
+  let alg Nil = []
+      alg (Cons a b) =
+        if f a
+           then a : b
+           else b
+   in cata alg
 
 myHead :: [a] -> a
 myHead =
