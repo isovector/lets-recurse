@@ -90,57 +90,67 @@ myFilter :: (a -> Bool) -> [a] -> [a]
 myFilter = undefined
 
 myHead :: [a] -> a
-myHead = let alg Nil = undefined
-             alg (Cons a _) = a
-          in cata alg
+myHead =
+  let alg Nil = undefined
+      alg (Cons a _) = a
+   in cata alg
 
 myLast :: [a] -> a
-myLast = let alg Nil = Right ()
-             alg (Cons a as) = as >> Left a
-          in either id undefined . cata alg
+myLast =
+  let alg Nil = Right ()
+      alg (Cons a as) = as >> Left a
+   in either id undefined . cata alg
 
 myInit :: [a] -> [a]
-myInit = let alg Nil = Nothing
-             alg (Cons a as) =
-               case as of
-                 Nothing -> Just []
-                 Just _ -> (a :) <$> as
-          in maybe undefined id . cata alg
+myInit =
+  let alg Nil = Nothing
+      alg (Cons a as) =
+        case as of
+          Nothing -> Just []
+          Just _ -> (a :) <$> as
+   in maybe undefined id . cata alg
 
 myNull :: [a] -> Bool
-myNull = let alg Nil = True
-             alg (Cons _ _) = False
-          in cata alg
+myNull =
+  let alg Nil = True
+      alg (Cons _ _) = False
+   in cata alg
 
 myLength :: [a] -> Int
-myLength = let alg Nil = 0
-               alg (Cons _ n) = n + 1
-            in cata alg
+myLength =
+  let alg Nil = 0
+      alg (Cons _ n) = n + 1
+   in cata alg
 
 myIndex :: [a] -> Nat -> a
-myIndex as = let alg ZF = as
-                 alg (SF a) = tail a
-              in head . cata alg
+myIndex as =
+  let alg ZF = as
+      alg (SF a) = tail a
+   in head . cata alg
 
 myReverse :: [a] -> [a]
-myReverse = let alg Nil = []
-                alg (Cons a b) = b ++ [a]
-             in cata alg
+myReverse =
+  let alg Nil = []
+      alg (Cons a b) = b ++ [a]
+   in cata alg
 
 myAnd :: [Bool] -> Bool
-myAnd = let alg Nil = True
-            alg (Cons a b) = a && b
-         in cata alg
+myAnd =
+  let alg Nil = True
+      alg (Cons a b) = a && b
+   in cata alg
 
 myAll :: (a -> Bool) -> [a] -> Bool
-myAll f = let alg Nil = True
-              alg (Cons a b) = f a && b
-           in cata alg
+myAll f =
+  let alg Nil = True
+      alg (Cons a b) = f a && b
+   in cata alg
 
 myConcatMap :: (a -> [b]) -> [a] -> [b]
-myConcatMap f = let alg Nil = []
-                    alg (Cons a bs) = f a ++ bs
-                 in cata alg
+myConcatMap f =
+  let alg Nil = []
+      alg (Cons a bs) = f a ++ bs
+   in cata alg
 
 myScanl :: (b -> a -> b) -> b -> [a] -> [b]
 myScanl = undefined
@@ -155,17 +165,20 @@ myScanr1 :: (a -> a -> a) -> [a] -> [a]
 myScanr1 = undefined
 
 myIterate :: (a -> a) -> a -> [a]
-myIterate f = let coalg a = Cons a (f a)
-               in ana coalg
+myIterate f =
+  let coalg a = Cons a (f a)
+   in ana coalg
 
 myRepeat :: a -> [a]
-myRepeat = let coalg a = Cons a a
-            in ana coalg
+myRepeat =
+  let coalg a = Cons a a
+   in ana coalg
 
 myReplicate :: a -> Nat -> [a]
-myReplicate a = let alg ZF = []
-                    alg (SF as) = a : as
-                 in cata alg
+myReplicate a =
+  let alg ZF = []
+      alg (SF as) = a : as
+   in cata alg
 
 myCycle :: [a] -> [a]
 myCycle = undefined
@@ -195,12 +208,13 @@ myNotElem :: (Foldable t, Eq a) => a -> t a -> Bool
 myNotElem = undefined
 
 myLookup :: Eq a => a -> [(a, b)] -> Maybe b
-myLookup a = let alg Nil = Nothing
-                 alg (Cons (a', b) x) =
-                   if a == a'
-                      then Just b
-                      else x
-              in cata alg
+myLookup a =
+  let alg Nil = Nothing
+      alg (Cons (a', b) x) =
+        if a == a'
+           then Just b
+           else x
+   in cata alg
 
 myZip :: [a] -> [b] -> [(a, b)]
 myZip = undefined
